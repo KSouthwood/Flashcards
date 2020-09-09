@@ -1,5 +1,6 @@
 package flashcards;
 
+import java.io.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -44,5 +45,45 @@ public class Flashcard {
 
     public String getDefinitionOfTerm(String term) {
         return cards.get(term);
+    }
+
+    public void removeCard(String term) {
+        if (this.hasTerm(term)) {
+            cards.remove(term);
+        }
+    }
+
+    public void importCardsFromFile(String filename) {
+        try (BufferedReader dataIn = new BufferedReader(new FileReader(filename))) {
+            boolean moreData = true;
+            int cardsRead = 0;
+            while (moreData) {
+                String term = dataIn.readLine();
+                String def  = dataIn.readLine();
+                if (term == null || def == null) {
+                    moreData = false;
+                    continue;
+                }
+                this.addCard(term, def);
+                cardsRead++;
+            }
+            System.out.printf("%d cards have been loaded.%n", cardsRead);
+        } catch (IOException e) {
+            System.out.println("File not found.");
+        }
+    }
+
+    public void exportCardsToFile(String filename) {
+        try (BufferedWriter dataOut = new BufferedWriter(new FileWriter(filename))) {
+            for (String term : this.getSetOfTerms()) {
+                dataOut.write(term);
+                dataOut.newLine();
+                dataOut.write(getDefinitionOfTerm(term));
+                dataOut.newLine();
+            }
+            System.out.printf("%d cards have been saved.", cards.size());
+        } catch (IOException e) {
+            System.out.printf("Error: %s%n", e);
+        }
     }
 }
