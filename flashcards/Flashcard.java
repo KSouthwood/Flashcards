@@ -1,19 +1,48 @@
 package flashcards;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 public class Flashcard {
-    String term;
-    String definition;
+    private Map<String, String> cards = new LinkedHashMap<>();
 
-    Flashcard(String term, String definition) {
-        this.term = term;
-        this.definition = definition;
+    public Set<String> getSetOfTerms() {
+        return cards.keySet();
     }
 
-    public String getTerm() {
-        return term;
+    public void addCard(String term, String definition) {
+        cards.put(term, definition);
     }
 
-    public String getDefinition() {
-        return definition;
+    public boolean hasTerm(String term) {
+        return cards.containsKey(term);
+    }
+
+    public boolean hasDefinition(String definition) {
+        return cards.containsValue(definition);
+    }
+
+    /**
+     * @param definition we need to find the matching term for
+     * @return term of the definition, empty string if value not found
+     */
+    public String getTermOfDefinition(String definition) {
+        String result = "";
+
+        if (this.hasDefinition(definition)) {
+            for (var term : this.getSetOfTerms()) {
+                if (this.getDefinitionOfTerm(term).equals(definition)) {
+                    result = term;
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public String getDefinitionOfTerm(String term) {
+        return cards.get(term);
     }
 }

@@ -1,15 +1,14 @@
 package flashcards;
 
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
     private static final Scanner input = new Scanner(System.in);
-    private static ArrayList<Flashcard> flashcards;
+    private static Flashcard flashcards;
 
     public static void main(String[] args) {
         int cards = getNumberOfCards();
-        flashcards = new ArrayList<>(cards);
+        flashcards = new Flashcard();
         defineCards(cards);
         askQuestions();
     }
@@ -28,22 +27,42 @@ public class Main {
 
     private static void defineCards(int cards) {
         for (int card = 1; card <= cards; card++) {
+            String term;
+            String definition;
+
             System.out.printf("The card #%d:\n", card);
-            String term = input.nextLine();
+            while (true) {
+                term = input.nextLine();
+                if (!flashcards.hasTerm(term)) {
+                    break;
+                }
+                System.out.printf("The card \"%s\" already exists. Try again:\n", term);
+            }
+
             System.out.printf("The definition of card #%d\n", card);
-            String definition = input.nextLine();
-            flashcards.add(new Flashcard(term, definition));
+            while (true) {
+                definition = input.nextLine();
+                if (!flashcards.hasDefinition(definition)) {
+                    break;
+                }
+                System.out.printf("The definition \"%s\" already exists. Try again:\n", definition);
+            }
+
+            flashcards.addCard(term, definition);
         }
     }
 
     private static void askQuestions() {
-        for (var card : flashcards) {
-            System.out.printf("Print the definition of \"%s\":\n", card.getTerm());
+        for (var term : flashcards.getSetOfTerms()) {
+            System.out.printf("Print the definition of \"%s\":\n", term);
             String answer = input.nextLine();
-            if (answer.equals(card.getDefinition())) {
+            if (answer.equals(flashcards.getDefinitionOfTerm(term))) {
                 System.out.println("Correct!");
+            } else if (flashcards.hasDefinition(answer)) {
+                System.out.printf("Wrong! The right answer is \"%s\", but your definition is correct" +
+                        " for \"%s\".\n", flashcards.getDefinitionOfTerm(term), flashcards.getTermOfDefinition(answer));
             } else {
-                System.out.printf("Wrong! The right answer is \"%s\".\n", card.getDefinition());
+                System.out.printf("Wrong! The right answer is \"%s\".\n", flashcards.getDefinitionOfTerm(term));
             }
         }
     }
