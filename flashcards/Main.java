@@ -1,18 +1,22 @@
 package flashcards;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
 public class Main {
-    private static final Scanner input = new Scanner(System.in);
     private static final Flashcard flashcards = new Flashcard();
+    private static final ArrayList<String> log = new ArrayList<>();
 
     public static void main(String[] args) {
         boolean running = true;
-        String filename;
         while (running) {
-            System.out.println("Input the action (add, remove, import, export, ask, exit):");
-            switch (input.nextLine()) {
+            consoleOutput("Input the action (add, remove, import, export, ask, log, hardest card, reset stats, exit):");
+            String command = consoleInput();
+            switch (command) {
                 case "add":
                     addCard();
                     break;
@@ -20,57 +24,59 @@ public class Main {
                     removeCard();
                     break;
                 case "import":
-                    System.out.println("File name:");
-                    filename = input.nextLine();
-                    flashcards.importCardsFromFile(filename);
-                    break;
                 case "export":
-                    System.out.println("File name:");
-                    filename = input.nextLine();
-                    flashcards.exportCardsToFile(filename);
+                case "log":
+                    fileOperation(command);
                     break;
                 case "ask":
                     askQuestions(getNumberOfQuestions());
                     break;
                 case "exit":
-                    System.out.println("Bye bye!");
+                    consoleOutput("Bye bye!");
                     running = false;
                     break;
+                case "reset stats":
+                    flashcards.resetStats();
+                    consoleOutput("Card statistics have been reset.");
+                    break;
+                case "hardest card":
+                    consoleOutput(flashcards.hardestCard());
+                    break;
                 default:
-                    System.out.println("Unknown option.");
+                    consoleOutput("Unknown option.");
                     break;
             }
-            System.out.println();
+            consoleOutput("");
         }
     }
 
     private static void addCard() {
-        System.out.println("The card:");
-        String term = input.nextLine();
+        consoleOutput("The card:");
+        String term = consoleInput();
         if (flashcards.hasTerm(term)) {
-            System.out.printf("The card \"%s\" already exists.\n", term);
+            consoleOutput("The card \"" + term + "\" already exists.");
             return;
         }
 
-        System.out.println("The definition of the card:");
-        String definition = input.nextLine();
+        consoleOutput("The definition of the card:");
+        String definition = consoleInput();
         if (flashcards.hasDefinition(definition)) {
-            System.out.printf("The definition \"%s\" already exists.\n", definition);
+            consoleOutput("The definition \"" + definition + "\" already exists.");
             return;
         }
 
-        flashcards.addCard(term, definition);
-        System.out.printf("The pair (\"%s\":\"%s\") has been added.\n", term, definition);
+        flashcards.addCard(term, definition, 0);
+        consoleOutput("The pair (\"" + term + "\":\"" + definition + "\") has been added.");
     }
 
     private static int getNumberOfQuestions() {
         while (true) {
-            System.out.println("How many times to ask?");
-            String numOfCards = input.nextLine();
+            consoleOutput("How many times to ask?");
+            String numOfCards = consoleInput();
             if (numOfCards.matches("\\b([1-9]|[1-9][0-9]+)\\b")) {
                 return Integer.parseInt(numOfCards);
             } else {
-                System.out.println("Please input a positive integer greater than 0.");
+                consoleOutput("Please input a positive integer greater than 0.");
             }
         }
     }
@@ -82,27 +88,78 @@ public class Main {
             String term = questionSet[rnd.nextInt(questionSet.length)];
             String definition = flashcards.getDefinitionOfTerm(term);
 
-            System.out.printf("Print the definition of \"%s\":\n", term);
-            String answer = input.nextLine();
+            consoleOutput("Print the definition of \"" + term + "\":");
+            String answer = consoleInput();
             if (answer.equals(definition)) {
-                System.out.println("Correct!");
-            } else if (flashcards.hasDefinition(answer)) {
-                System.out.printf("Wrong! The right answer is \"%s\", but your definition is correct" +
-                        " for \"%s\".\n", definition, flashcards.getTermOfDefinition(answer));
+                consoleOutput("Correct!");
             } else {
-                System.out.printf("Wrong! The right answer is \"%s\".\n", definition);
+                flashcards.answeredWrong(term);
+                if (flashcards.hasDefinition(answer)) {
+                    consoleOutput("Wrong! The right answer is \"" + definition + "\", but your definition is correct" +
+                            " for \"" + flashcards.getTermOfDefinition(answer) + "\".");
+                } else {
+                    consoleOutput("Wrong! The right answer is \"" + definition + "\".");
+                }
             }
         }
     }
 
     private static void removeCard() {
-        System.out.println("The card:");
-        String term = input.nextLine();
+        consoleOutput("The card:");
+        String term = consoleInput();
         if (flashcards.hasTerm(term)) {
             flashcards.removeCard(term);
-            System.out.println("The card has been removed.");
+            consoleOutput("The card has been removed.");
         } else {
-            System.out.printf("Can't remove \"%s\": there is no such card.\n", term);
+            consoleOutput("Can't remove \"" + term + "\": there is no such card.");
+        }
+    }
+
+    /**
+     * @param msg the text that we're outputting to the console which we log at the same time
+     */
+    private static void consoleOutput(String msg) {
+        log.add(msg);
+        System.out.println(msg);
+    }
+
+    /**
+     * Get input from the console and log it, then return it
+     *
+     * @return the text entered in the console as a String
+     */
+    private static String consoleInput() {
+        String inputLine = new Scanner(System.in).nextLine();
+        log.add("> " + inputLine);
+        return inputLine;
+    }
+
+    private static void fileOperation(String command) {
+        consoleOutput("File name:");
+        String filename = consoleInput();
+        switch (command) {
+            case "import":
+                consoleOutput(flashcards.importCardsToFile(filename));
+                break;
+            case "export":
+                consoleOutput(flashcards.exportCardsToFile(filename));
+                break;
+            case "log":
+                writeLog(filename);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private static void writeLog(String filename) {
+        try (BufferedWriter logOut = new BufferedWriter(new FileWriter(filename))) {
+            for (String line : log) {
+                logOut.write(line + "\n");
+            }
+            consoleOutput("The log has been saved.");
+        } catch (IOException e) {
+            consoleOutput("File error: " + e);
         }
     }
 }
