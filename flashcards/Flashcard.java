@@ -65,7 +65,7 @@ public class Flashcard {
         }
     }
 
-    public String importCardsToFile(String filename) {
+    public String importCardsFromFile(String filename) {
         try (BufferedReader dataIn = new BufferedReader(new FileReader(filename))) {
             String line;
             int cardsRead = 0;

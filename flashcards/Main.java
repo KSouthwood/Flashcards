@@ -12,6 +12,34 @@ public class Main {
     private static final ArrayList<String> log = new ArrayList<>();
 
     public static void main(String[] args) {
+        String importName = null;
+        String exportName = null;
+
+        if (args.length != 0) {
+            for (int index = 0; index < args.length; index++) {
+                if (args[index].equals("-import")) {
+                    importName = args[index + 1];
+                    index++;
+                }
+                if (args[index].equals("-export")) {
+                    exportName = args[index + 1];
+                    index++;
+                }
+            }
+        }
+
+        if (importName != null) {
+            consoleOutput(flashcards.importCardsFromFile(importName));
+        }
+
+        controller();
+
+        if (exportName != null) {
+            consoleOutput(flashcards.exportCardsToFile(exportName));
+        }
+    }
+
+    public static void controller() {
         boolean running = true;
         while (running) {
             consoleOutput("Input the action (add, remove, import, export, ask, log, hardest card, reset stats, exit):");
@@ -139,7 +167,7 @@ public class Main {
         String filename = consoleInput();
         switch (command) {
             case "import":
-                consoleOutput(flashcards.importCardsToFile(filename));
+                consoleOutput(flashcards.importCardsFromFile(filename));
                 break;
             case "export":
                 consoleOutput(flashcards.exportCardsToFile(filename));
